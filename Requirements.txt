@@ -1,0 +1,10 @@
+annoy
+dask[dataframe]
+implicit
+kagglehub
+matplotlib
+numpy
+pandas
+scikit-learn
+scipy
+mlxtend
