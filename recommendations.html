@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Game Recommendations</title>
+    <style>
+      body {
+        background-color: black;
+        color: white;
+        font-family: Arial, sans-serif;
+        text-align: center;
+      }
+      h1 {
+        margin-top: 50px;
+      }
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 20px auto;
+        width: 400px; /* Adjust as needed */
+      }
+      li {
+        background-color: #333;
+        padding: 10px;
+        margin-bottom: 5px;
+        border-radius: 5px;
+        border: 1px solid #555;
+      }
+      li:nth-child(odd) {
+        background-color: #444;
+      }
+      a {
+        color: #4CAF50;
+        text-decoration: none;
+      }
+      a:hover {
+        color: #45a049;
+      }
+    </style>
+</head>
+<body>
+    <h1>Recommended Games for "{{ game_name }}"</h1>
+    {% if recommendations %}
+        <ul>
+            {% for recommendation in recommendations %}
+                <li>{{ recommendation }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No recommendations found for "{{ game_name }}".</p>
+    {% endif %}
+    <a href="/">Go back to input</a>
+</body>
+</html>
