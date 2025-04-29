@@ -9,8 +9,8 @@ app = Flask(__name__)
 
 # --- Load your game data and TF-IDF vectorizer ---
 # Replace 'your_games_data.csv' and 'tfidf_vectorizer_rec1.pkl' with your actual file paths
-DATA_FILE = '/data/df_games.csv'
-TFIDF_FILE = '/models/tfidf_vectorizer_rec1.pkl'
+DATA_FILE = '/app/data/df_games.csv'
+TFIDF_FILE = '/app/models/tfidf_vectorizer_rec1.pkl'
 
 
 try:
@@ -89,4 +89,4 @@ def recommend():
     return render_template('recommendations.html', game_name=game_name, recommendations=recommendations)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)
