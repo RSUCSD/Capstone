@@ -1,41 +1,22 @@
 # Use an official Python runtime as a parent image
 FROM python:3.9-slim-buster
 
-# Install build dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    build-essential \
-    cmake \
-    gcc \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
-
-# Set the working directory in the container to /app
+# Set the working directory in the container
 WORKDIR /app
 
-# Copy the requirements file into the container
-COPY Requirements.txt .
+# Copy the requirements file to the container to leverage Docker cache
+COPY requirements.txt requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir google-cloud-storage gunicorn
 
-# Install the Python dependencies
-RUN pip install -r Requirements.txt
+# Copy the rest of the application code to the container
+COPY . /app
 
-# Copy the application code and HTML templates
-COPY app.py .
-COPY index.html .
-COPY recommendations.html .
+# Set environment variables (if needed)
+# ENV MY_VAR=my_value
 
-# Copy any static assets
-COPY static/ ./static/
+# Expose the port that Flask listens on (Cloud Run expects 8080)
+EXPOSE 8080
 
-# Copy the data and model files
-COPY data/ ./data/
-COPY models/ ./models/
-
-# Expose the port that Flask will use
-EXPOSE 5000
-
-# Set the environment variable to tell Flask which app to run
-ENV FLASK_APP=app.py
-
-# Command to run the Flask application
-CMD ["flask", "run", "--host", "0.0.0.0", "--port", "5000"]
+# Command to run the Flask application using Gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "app:app", "--workers", "1", "--timeout", "60"]

@@ -4,30 +4,57 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import os
+from google.cloud import storage  # Import Google Cloud Storage library
+import tempfile  # For creating temporary files
 
 app = Flask(__name__)
 
-# --- Load your game data and TF-IDF vectorizer ---
-# Replace 'your_games_data.csv' and 'tfidf_vectorizer_rec1.pkl' with your actual file paths
-DATA_FILE = '/app/data/df_games.csv'
-TFIDF_FILE = '/app/models/tfidf_vectorizer_rec1.pkl'
+# --- Google Cloud Storage Configuration ---
+BUCKET_NAME = "capstone-rs"  # Replace with your bucket name
+DATA_FILE_BLOB_NAME = "data/df_games.csv"  # Path to your CSV in the bucket
+TFIDF_FILE_BLOB_NAME = "models/tfidf_vectorizer_rec1.pkl"  # Path to your model
 
+def download_from_gcs(bucket_name, blob_name, local_file_path):
+    """Downloads a file from Google Cloud Storage."""
+    try:
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(bucket_name)
+        blob = bucket.blob(blob_name)
+        blob.download_to_filename(local_file_path)
+        print(f"Downloaded {blob_name} to {local_file_path}")
+    except Exception as e:
+        print(f"Error downloading {blob_name}: {e}")
+        return False
+    return True
+
+# --- Load data and model ---
+df_games = pd.DataFrame()  # Initialize as empty
+tfidf_vectorizer = None
 
 try:
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    data_file_path = os.path.join(script_dir, DATA_FILE)
-    tfidf_file_path = os.path.join(script_dir, TFIDF_FILE)
-    df_games = pd.read_csv(data_file_path)
-    with open(tfidf_file_path, 'rb') as f:
-        tfidf_vectorizer = pickle.load(f)
-except FileNotFoundError as e:
-    print(f"Error: File not found - {e.filename}.  Please check the file path.")
-    df_games = pd.DataFrame()
-    tfidf_vectorizer = None
+    # Create temporary files to store the downloaded data
+    with tempfile.NamedTemporaryFile(delete=False) as tmp_csv:
+        local_csv_path = tmp_csv.name
+    with tempfile.NamedTemporaryFile(delete=False) as tmp_pkl:
+        local_pkl_path = tmp_pkl.name
+
+    # Download from GCS
+    if (download_from_gcs(BUCKET_NAME, DATA_FILE_BLOB_NAME, local_csv_path) and
+        download_from_gcs(BUCKET_NAME, TFIDF_FILE_BLOB_NAME, local_pkl_path)):
+
+        df_games = pd.read_csv(local_csv_path)
+        with open(local_pkl_path, 'rb') as f:
+            tfidf_vectorizer = pickle.load(f)
+
+        # Clean up temporary files (important!)
+        os.remove(local_csv_path)
+        os.remove(local_pkl_path)
+
+    else:
+        print("Failed to download data/model from GCS. App may not function correctly.")
+
 except Exception as e:
-    print(f"Error loading data or model: {e}")
-    df_games = pd.DataFrame()
-    tfidf_vectorizer = None
+    print(f"Error loading data: {e}")
 
 # --- Recommendation Function ---
 def get_recommendations(dataframe, title_col, game_name, tfidf_vectorizer):
@@ -88,5 +115,5 @@ def recommend():
 
     return render_template('recommendations.html', game_name=game_name, recommendations=recommendations)
 
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+#if __name__ == '__main__':
+#    app.run(debug=True)
