@@ -90,23 +90,74 @@
             margin-bottom: 20px;
             display: block;
         }
+
+        /* The "box" that contains the recommendations */
+        .recommendations-box {
+            width: 80%; /* Adjust as needed */
+            margin: 20px auto; /* Center the box */
+            border: 1px solid #555;
+            background-color: #222;
+            padding: 20px;
+            box-sizing: border-box; /* Include padding in width */
+            display: flex;
+            justify-content: space-around; /* Distribute space evenly */
+            align-items: flex-start; /* Align items to the top */
+        }
+
+        .recommendation-section {
+            display: inline-block;
+            vertical-align: top;
+            width: 45%; /* Adjust as needed */
+            margin-bottom: 0; /* Remove bottom margin */
+        }
+
+        .recommendation-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #66b3ff;
+            /* A nice blue for titles */
+        }
     </style>
 </head>
 
 <body>
     <h1>Recommended Games for "{{ game_name }}"</h1>
-    <p id="recommendation_explanation">
-        These recommendations are based on the game's similarity to "{{ game_name }}" in terms of game title and rating score.
-    </p>
-    {% if recommendations %}
-    <ul>
-        {% for recommendation in recommendations %}
-        <li>{{ recommendation }}</li>
-        {% endfor %}
-    </ul>
-    {% else %}
-    <p>No recommendations found for "{{ game_name }}".</p>
-    {% endif %}
+
+    <div class="recommendations-box">
+        <div class="recommendation-section">
+            <h2 class="recommendation-title">Title-Based Recommendations</h2>
+            <p id="recommendation_explanation">
+                These recommendations are based on similarity in game titles.
+            </p>
+            {% if recommendations_title %}
+            <ul>
+                {% for recommendation in recommendations_title %}
+                <li>{{ recommendation }}</li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>No title-based recommendations found for "{{ game_name }}".</p>
+            {% endif %}
+        </div>
+
+        <div class="recommendation-section">
+            <h2 class="recommendation-title">Title-Based and Rating Score-Based Recommendations</h2>
+            <p id="recommendation_explanation">
+                These recommendations are based on similarity in game titles and rating score.
+            </p>
+            {% if recommendations_combined %}
+            <ul>
+                {% for recommendation in recommendations_combined %}
+                <li>{{ recommendation }}</li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>No combined recommendations found for "{{ game_name }}".</p>
+            {% endif %}
+        </div>
+    </div>
+
     <a href="/" id="back_to_input">Go back to input</a>
 
     <div id="limitations_box">
