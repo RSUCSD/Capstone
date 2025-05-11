@@ -7,44 +7,64 @@ import os
 
 app = Flask(__name__)
 
-# --- Load your game data and the combined recommendation model (TF-IDF vectorizer) ---
-# Replace with your actual file paths
+# --- Load Data and Models ---
 DATA_FILE = '/Users/rsusanto/Documents/Flask Local/data/df_games.csv'
-MODEL_FILE = '/Users/rsusanto/Documents/Flask Local/models/tfidf_vectorizer_rec2.pkl' # Assuming your saved model includes the TF-IDF
+TFIDF_FILE_1 = '/Users/rsusanto/Documents/Flask Local/models/tfidf_vectorizer_rec1.pkl'
+TFIDF_FILE_2 = '/Users/rsusanto/Documents/Flask Local/models/tfidf_vectorizer_rec2.pkl'
+
+df_games = pd.DataFrame()
+tfidf_vectorizer_1 = None
+tfidf_vectorizer_2 = None
 
 try:
     script_dir = os.path.dirname(os.path.abspath(__file__))
     data_file_path = os.path.join(script_dir, DATA_FILE)
-    model_file_path = os.path.join(script_dir, MODEL_FILE)
+    tfidf_file_path_1 = os.path.join(script_dir, TFIDF_FILE_1)
+    tfidf_file_path_2 = os.path.join(script_dir, TFIDF_FILE_2)
+
     df_games = pd.read_csv(data_file_path)
-    with open(model_file_path, 'rb') as f:
-        tfidf_vectorizer = pickle.load(f)
+
+    with open(tfidf_file_path_1, 'rb') as f:
+        tfidf_vectorizer_1 = pickle.load(f)
+
+    with open(tfidf_file_path_2, 'rb') as f:
+        tfidf_vectorizer_2 = pickle.load(f)
+
 except FileNotFoundError as e:
     print(f"Error: File not found - {e.filename}. Please check the file path.")
-    df_games = pd.DataFrame()
-    tfidf_vectorizer = None
 except Exception as e:
     print(f"Error loading data or model: {e}")
-    df_games = pd.DataFrame()
-    tfidf_vectorizer = None
 
-# --- Recommendation Function (Now Handles Title and Rating) ---
-def get_combined_recommendations(dataframe, title_col, rating_col, game_name, tfidf_vectorizer, rating_weight=0.2):
-    """
-    Generates recommendations based on title similarity and rating score.
 
-    Args:
-        dataframe (pd.DataFrame): The input dataframe containing game information.
-        title_col (str): The name of the column containing game titles.
-        rating_col (str): The name of the column containing game rating scores.
-        game_name (str): The name of the game to find recommendations for.
-        tfidf_vectorizer (TfidfVectorizer): The pre-fitted TF-IDF vectorizer.
-        rating_weight (float, optional): The weight to give to the rating score (between 0 and 1). Defaults to 0.2.
+# --- Recommendation Functions ---
+def get_recommendations_title(dataframe, title_col, game_name, tfidf_vectorizer):
+    """Recommends games based on title similarity."""
 
-    Returns:
-        pd.Series: A Series containing the titles of the top 10 recommended games,
-                  or an empty Series if an error occurs.
-    """
+    if tfidf_vectorizer is None or dataframe.empty:
+        return pd.Series(["Error: Data or model not loaded."])
+
+    if game_name not in dataframe[title_col].values:
+        return pd.Series([f"Game '{game_name}' not found in the database."])
+
+    try:
+        game_name_tfidf = tfidf_vectorizer.transform([game_name])
+        tfidf_matrix = tfidf_vectorizer.transform(dataframe[title_col])
+        cosine_sim = cosine_similarity(game_name_tfidf, tfidf_matrix)
+        indices = pd.Series(dataframe.index, index=dataframe[title_col]).drop_duplicates()
+        sim_scores = list(enumerate(cosine_sim[0]))
+        sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
+        sim_scores = sim_scores[1:11]  # Top 10 excluding the input game
+        game_indices = [i[0] for i in sim_scores]
+        return dataframe['title'].iloc[game_indices]
+    except KeyError:
+        return pd.Series([f"Game '{game_name}' not found in the indices."])
+    except Exception as e:
+        return pd.Series([f"Error during recommendation: {e}"])
+
+
+def get_recommendations_combined(dataframe, title_col, rating_col, game_name, tfidf_vectorizer, rating_weight=0.2):
+    """Recommends games based on title similarity and rating."""
+
     if tfidf_vectorizer is None or dataframe.empty:
         return pd.Series(["Error: Data or model not loaded."])
 
@@ -55,36 +75,27 @@ def get_combined_recommendations(dataframe, title_col, rating_col, game_name, tf
         indices = pd.Series(dataframe.index, index=dataframe[title_col]).drop_duplicates()
         idx = indices[game_name]
 
-        # Get the similarity scores based on title
         game_name_tfidf = tfidf_vectorizer.transform([game_name])
         tfidf_matrix = tfidf_vectorizer.transform(dataframe[title_col])
         cosine_sim = cosine_similarity(game_name_tfidf, tfidf_matrix)
         sim_scores = list(enumerate(cosine_sim[0]))
 
-        # Get the rating score of the input game
         base_rating = dataframe.loc[idx, rating_col]
 
-        # Create a list to store combined scores
         combined_scores = []
         for i, score in sim_scores:
-            # Get the rating of the other game
             other_rating = dataframe.loc[i, rating_col]
 
-            # Normalize ratings
             min_rating = dataframe[rating_col].min()
             max_rating = dataframe[rating_col].max()
             normalized_base_rating = (base_rating - min_rating) / (max_rating - min_rating)
             normalized_other_rating = (other_rating - min_rating) / (max_rating - min_rating)
 
-            # Calculate the weighted average of similarity and normalized rating
             combined_score = (1 - rating_weight) * score + rating_weight * normalized_other_rating
             combined_scores.append((i, combined_score))
 
-        # Sort the combined scores
         combined_scores = sorted(combined_scores, key=lambda x: x[1], reverse=True)
-
-        # Get the top 10 most similar games (excluding the input game itself)
-        combined_scores = [s for s in combined_scores if s[0] != idx] # Exclude the input game
+        combined_scores = [s for s in combined_scores if s[0] != idx]
         top_10_indices = [i[0] for i in combined_scores[:10]]
 
         return dataframe['title'].iloc[top_10_indices]
@@ -94,24 +105,41 @@ def get_combined_recommendations(dataframe, title_col, rating_col, game_name, tf
     except Exception as e:
         return pd.Series([f"Error during recommendation: {e}"])
 
+
 # --- Flask Routes ---
 @app.route('/', methods=['GET'])
 def index():
-    """Renders the input form."""
     return render_template('index.html')
+
 
 @app.route('/recommend', methods=['POST'])
 def recommend():
-    """Handles the form submission and displays recommendations based on title and rating."""
     game_name = request.form['game_title']
-    recommendations_list = get_combined_recommendations(df_games, "title", "rating_score", game_name, tfidf_vectorizer, rating_weight=0.8) # Assuming 'rating_score' is your rating column
 
-    if isinstance(recommendations_list, pd.Series):
-        recommendations = recommendations_list.tolist()
+    recommendations_title = get_recommendations_title(
+        df_games, "title", game_name, tfidf_vectorizer_1
+    )
+    recommendations_combined = get_recommendations_combined(
+        df_games, "title", "rating_score", game_name, tfidf_vectorizer_2, rating_weight=0.8
+    )
+
+    if isinstance(recommendations_title, pd.Series):
+        recommendations_title_list = recommendations_title.tolist()
     else:
-        recommendations = list(recommendations_list)
+        recommendations_title_list = list(recommendations_title)
 
-    return render_template('recommendations.html', game_name=game_name, recommendations=recommendations)
+    if isinstance(recommendations_combined, pd.Series):
+        recommendations_combined_list = recommendations_combined.tolist()
+    else:
+        recommendations_combined_list = list(recommendations_combined)
+
+    return render_template(
+        'recommendations.html',
+        game_name=game_name,
+        recommendations_title=recommendations_title_list,
+        recommendations_combined=recommendations_combined_list,
+    )
+
 
 if __name__ == '__main__':
     app.run(debug=True)
