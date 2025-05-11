@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>RS Capstone Project - Video Game Recommendation</title>
     <style>
@@ -9,21 +10,25 @@
             font-family: Arial, sans-serif;
             text-align: center;
         }
+
         h1 {
-            margin-top: 80px; /* Increased margin-top */
+            margin-top: 80px;
             margin-bottom: 0;
         }
+
         h2 {
-            margin-top: 20px; /* Increased margin-top */
+            margin-top: 20px;
             font-size: 1.5em;
             font-weight: normal;
         }
+
         form {
-            margin-top: 60px; /* Increased margin-top */
+            margin-top: 60px;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
+
         input[type="text"] {
             padding: 12px 20px;
             width: 300px;
@@ -33,6 +38,7 @@
             background-color: #222;
             color: #eee;
         }
+
         input[type="submit"] {
             padding: 10px 20px;
             background-color: #4CAF50;
@@ -42,15 +48,18 @@
             cursor: pointer;
             margin-top: 15px;
         }
+
         input[type="submit"]:hover {
             background-color: #45a049;
         }
+
         #game_suggestions {
-            margin-top: 30px; /* Increased margin-top */
+            margin-top: 30px;
             font-style: italic;
             color: #ddd;
             margin-bottom: 20px;
         }
+
         .game_images {
             display: flex;
             flex-wrap: wrap;
@@ -61,14 +70,31 @@
             margin-left: auto;
             margin-right: auto;
         }
+
         .game_images img {
             width: 150px;
             height: auto;
             border-radius: 5px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
         }
+
+        #game_list_notification {
+            margin-top: 20px;
+            color: #ddd;
+            font-size: 0.9em;
+        }
+
+        #game_list_link {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+
+        #game_list_link:hover {
+            color: #45a049;
+        }
     </style>
 </head>
+
 <body>
     <h1>RS Capstone Project</h1>
     <h2>Steam Video Game Recommendation</h2>
@@ -82,11 +108,28 @@
         <img src="{{ url_for('static', filename='cod.jpg') }}" alt="Call of Duty">
         <img src="{{ url_for('static', filename='minecraft.jpg') }}" alt="Minecraft">
         <img src="{{ url_for('static', filename='re.jpg') }}" alt="Resident Evil">
+        <img src="{{ url_for('static', filename='doom.jpg') }}" alt="Doom">
+        <img src="{{ url_for('static', filename='portal.jpg') }}" alt="Portal">
+        <img src="{{ url_for('static', filename='tf2.jpg') }}" alt="Team Fortress 2">
+        <img src="{{ url_for('static', filename='dota2.jpg') }}" alt="Dota 2">
+        <img src="{{ url_for('static', filename='f3.jpg') }}" alt="Fallout 3">
+        <img src="{{ url_for('static', filename='ff.jpg') }}" alt="Final Fantasy XVI">
+        <img src="{{ url_for('static', filename='rdd2.jpg') }}" alt="Red Dead Redemption 2">
+        <img src="{{ url_for('static', filename='aw.jpg') }}" alt="Alan Wake">
+        <img src="{{ url_for('static', filename='mgs.jpg') }}" alt="Metal Gear Solid">
         <img src="{{ url_for('static', filename='mix.jpg') }}" alt="Various">
     </div>
     <form method="POST" action="/recommend">
         <input type="text" name="game_title" placeholder="Enter game name">
         <input type="submit" value="Display">
     </form>
+
+    <p id="game_list_notification">
+        Note: Game titles may be case-sensitive. 
+        <a id="game_list_link" href="https://github.com/RSUCSD/Capstone/tree/main/data" target="_blank">
+            See the full list of games here.
+        </a>
+    </p>
 </body>
+
 </html>
