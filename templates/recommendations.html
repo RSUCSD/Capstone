@@ -47,7 +47,48 @@
         #recommendation_explanation {
             margin-top: 20px;
             font-size: 0.9em;
-            color: #aaa;
+            color: #b0e0e6;
+            /* A light blue color */
+            font-weight: bold;
+        }
+
+        #limitations_box {
+            border: 1px solid #555;
+            background-color: #222;
+            padding: 10px 15px;
+            margin: 30px auto;
+            text-align: center;
+            width: fit-content;
+            display: inline-block;
+        }
+
+        #limitations_title {
+            color: #ffdb58;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        #limitations_list {
+            list-style-type: disc;
+            display: inline-block;
+            text-align: left;
+            margin: 0;
+            padding: 0;
+        }
+
+        #limitations_list li {
+            color: #ccc;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        #limitations_list li b {
+            color: #f9a093;
+        }
+
+        #back_to_input {
+            margin-bottom: 20px;
+            display: block;
         }
     </style>
 </head>
@@ -66,7 +107,18 @@
     {% else %}
     <p>No recommendations found for "{{ game_name }}".</p>
     {% endif %}
-    <a href="/">Go back to input</a>
+    <a href="/" id="back_to_input">Go back to input</a>
+
+    <div id="limitations_box">
+        <p id="limitations_title">Limitations of the Recommendation System</p>
+        <ul id="limitations_list">
+            <li><b>Genre Complexity:</b> The dataset's extensive genre variations complicate precise game comparisons.</li>
+            <li><b>Missing Data:</b> Incomplete Metacritic scores can affect the accuracy of rating-based comparisons.</li>
+            <li><b>Computational Constraints:</b> Limited computing resources may restrict the model's complexity.</li>
+            <li><b>Data Dependency:</b> Recommendation quality is tied to the accuracy of the underlying game data.</li>
+            <li><b>Cold Start Problem:</b> Accuracy may be reduced for new or less popular games with limited data.</li>
+        </ul>
+    </div>
 </body>
 
 </html>
